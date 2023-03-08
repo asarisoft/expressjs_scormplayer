@@ -56,7 +56,7 @@ app.get('/download', (req, res) => {
       // Delete the original ZIP file
       fs.unlinkSync(filepath);
 
-      res.send('Download completed!');
+      res.send(`scormextract/${filename}/imsmanifest.xml`);
       // res.redirect('/scorm');
     });
   });

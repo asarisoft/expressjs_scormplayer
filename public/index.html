@@ -49,11 +49,10 @@
   <script>
     var httpRequest = new XMLHttpRequest();
     var progressBar = document.getElementById('progress');
-    // Get the query string from the URL
+
+    // get url Param
     const queryString = window.location.search;
-    // Parse the query string into a URLSearchParams object
     const urlParams = new URLSearchParams(queryString);
-    // Get the value of a specific parameter by name
     const url = urlParams.get('url');
 
     var timeOut = setTimeout(function () {
@@ -65,7 +64,8 @@
       if (httpRequest.readyState === 4) {
         clearTimeout(timeOut);
         if (httpRequest.status === 200) {
-          window.location.href = "http://localhost:3000/scorm";
+          console.log(httpRequest.responseText)
+          window.location.href = `http://localhost:3000/scorm?manifestUrl=${httpRequest.responseText}`;
         } else {
           alert('Request failed: ' + httpRequest.status);
         }
