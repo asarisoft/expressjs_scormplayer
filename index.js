@@ -28,13 +28,16 @@ app.get('/download', (req, res) => {
       const zipEntries = zip.getEntries();
 
       // Loop through all entries in the zip file and extract them
-      fs.mkdir(`${__dirname}/public/scormextract/${filename}`, (err) => {
-        if (err) {
-          console.error(err);
-        } else {
-          console.log('Directory created successfully!');
-        }
-      });
+      if (!fs.existsSync(`${__dirname}/public/scormextract/${filename}`)) {
+         // Extract the file from the ZIP archive
+        fs.mkdir(`${__dirname}/public/scormextract/${filename}`, (err) => {
+          if (err) {
+            console.error(err);
+          } else {
+            console.log('Directory created successfully!');
+          }
+        });
+      }
       
       zipEntries.forEach((entry) => {
         const entryPath = `${__dirname}/public/scormextract/${filename}/${entry.entryName}`;
@@ -53,8 +56,8 @@ app.get('/download', (req, res) => {
       // Delete the original ZIP file
       fs.unlinkSync(filepath);
 
-      // res.send('Download completed!');
-      res.redirect('/scorm');
+      res.send('Download completed!');
+      // res.redirect('/scorm');
     });
   });
 
