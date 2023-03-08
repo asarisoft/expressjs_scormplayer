@@ -32,7 +32,7 @@
       // RUN WITH READ MANIFEST
       const queryString = window.location.search;
       const urlParams = new URLSearchParams(queryString);
-      let manifestUrl = `http://localhost:3000/${urlParams.get('manifesturl')}`
+      let manifestUrl = `http://localhost:3000/${urlParams.get('manifestUrl')}`
       const xmlDoc = await getXmlManifest(manifestUrl);
       const doc = window.simplifyScorm.xmlToJson(xmlDoc);
       const version = doc.manifest.metadata.schemaversion["#text"]
