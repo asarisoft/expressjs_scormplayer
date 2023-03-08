@@ -20,6 +20,16 @@
         .then((data) => data)
         .catch(console.error)
     }
+    
+    function getBaseUrl () {
+      const protocol = window.location.protocol;
+      const port = window.location.port;
+      let baseUrl = protocol + "//" + window.location.hostname;
+      if (port) {
+        baseUrl += ":" + port;
+      }
+      return baseUrl
+    }
 
     window.loadScorm = async function loadScorm() {
       console.log("=== SCROM PLAYER VERSION: 2023/03/08 ===")
@@ -32,7 +42,7 @@
       // RUN WITH READ MANIFEST
       const queryString = window.location.search;
       const urlParams = new URLSearchParams(queryString);
-      let manifestUrl = `http://localhost:3000/${urlParams.get('manifestUrl')}`
+      let manifestUrl = `${getBaseUrl()}/${urlParams.get('manifestUrl')}`
       const xmlDoc = await getXmlManifest(manifestUrl);
       const doc = window.simplifyScorm.xmlToJson(xmlDoc);
       const version = doc.manifest.metadata.schemaversion["#text"]

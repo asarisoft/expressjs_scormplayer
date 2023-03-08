@@ -55,6 +55,15 @@
     const urlParams = new URLSearchParams(queryString);
     const url = urlParams.get('url');
 
+    // gate bas url
+    const protocol = window.location.protocol;
+    const port = window.location.port;
+    let baseUrl = protocol + "//" + window.location.hostname;
+    if (port) {
+      baseUrl += ":" + port;
+    }
+
+
     var timeOut = setTimeout(function () {
       httpRequest.abort();
       alert('Request timeout');
@@ -65,7 +74,7 @@
         clearTimeout(timeOut);
         if (httpRequest.status === 200) {
           console.log(httpRequest.responseText)
-          window.location.href = `http://localhost:3000/scorm?manifestUrl=${httpRequest.responseText}`;
+          window.location.href = `${baseUrl}/scorm?manifestUrl=${httpRequest.responseText}`;
         } else {
           alert('Request failed: ' + httpRequest.status);
         }
@@ -74,7 +83,7 @@
         progressBar.style.width = progress + '%';
       }
     };
-    httpRequest.open('GET', `http://localhost:3000/download?url=${url}`);
+    httpRequest.open('GET', `${baseUrl}/download?url=${url}`);
     httpRequest.send();
   </script>
 </body>
