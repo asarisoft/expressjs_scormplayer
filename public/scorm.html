@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Scorm Player - NEMS</title>
+  <link href="style/style.css" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="scripts/init.js"></script>
+  <script type="text/javascript" src="scripts/constants.js"></script>
+  <script type="text/javascript" src="scripts/baseAPI.js"></script>
+  <script type="text/javascript" src="scripts/jsonFormatter.js"></script>
+  <script type="text/javascript" src="scripts/scormAPI.js"></script>
+  <script type="text/javascript" src="scripts/scormAPI2004.js"></script>
+  <script>
+    window.loadScorm = async function loadScorm() {
+      console.log("=== SCROM PLAYER VERSION: 2023/03/08 ===")
+      console.log("=== REFRESH TOKEN VERSION ===")
+      const mainFrame = document.getElementById("scorm-player")
+      mainFrame.name === 'scorm'
+      mainFrame.src = "/scormextract/scorm.zip/modul/index.html"
+
+      // ====== scorm 2004 =====
+      window.API.on("LMSSetValue", function (elm, value) {
+        console.log("1")
+        // sendScormHistory("SET VALUE SCORM 1.2")
+      });
+      window.API.on("LMSCommit", function (elm, value) {
+        console.log("2")
+        // sendScormHistory("COMMIT SCORM 1.2")
+      });
+      window.API.on("LMSFinish", function (elm, value) {
+        console.log("3")
+        // sendScormHistory("TERMINATE SCORM 1.2")
+      });
+
+      // ====== scorm 2004 =====
+      window.API_1484_11.on("SetValue", function (elm, value) {
+        console.log("1")
+        // sendScormHistory("SET VALUE SCORM 2004")
+      });
+      window.API_1484_11.on("Commit", function (elm, value) {
+        console.log("2")
+        // sendScormHistory("COMMIT SCORM 2004")
+      });
+      window.API_1484_11.on("Terminate", function (elm, value) {
+        console.log("3")
+        // sendScormHistory("TERMINATE SCORM 2004")
+      });
+    }
+
+    window.removeLoading = function removeLoading() {
+      const mainFrame = document.getElementById("scorm-player")
+      const containerFrame = document.getElementById("container")
+      const loader = document.getElementById("scorm-loader")
+      loader.style = "display: none;"
+      containerFrame.style = "display: block;"
+    }
+  </script>
+</head>
+
+<body onload="loadScorm()">
+  <div id="scorm-loader" class="loader">Loading...</div>
+  <div id="container" class="iframe-container">
+    <div id="warning" style="background-color: yellow;  position: fixed; top: 0; left:0; width: 100%; display: none">
+      <p style="text-align: center; padding: 4px; font-size: 13px;">
+        Warning: connection issue detected, results may not be recorded. </br>
+        Please refresh page / try again later</p>
+    </div>
+    <iframe application="yes" id="scorm-player" src="blank.html" name="blank" frameborder="0" allowfullscreen
+      onload="removeLoading()">
+  </div>
+</body>
+
+</html>
