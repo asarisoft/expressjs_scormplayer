@@ -49,7 +49,11 @@ app.get('/download', (req, res) => {
         } else {
           // Extract file
           const data = zip.readFile(entry);
-          fs.writeFileSync(entryPath, data);
+          try {
+            fs.writeFileSync(entryPath, data);
+          } catch (error) {
+            console.log("error", error)
+          }
         }
       });
 
