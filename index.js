@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/download', (req, res) => {
-  const fileURL = req.query.url;
+  const fileURL = req.query.url.replace("https", "http");
   const filename = fileURL.split('/').pop();
   const filepath = `${__dirname}/scormzip/${filename}`;
 
