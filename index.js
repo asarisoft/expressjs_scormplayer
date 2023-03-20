@@ -2,17 +2,24 @@ const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
+const bodyParser = require('body-parser');
 
 const app = express();
 const server = http.createServer(app);
 const port = 3000;
 
-app.use(express.static('public'));
+const { sequelize, ScormHistory } = require('./db');
+const { json } = require('body-parser');
 
-app.get('/', (req, res) => {
+app.use(express.static('public'));
+app.use(bodyParser.json());
+
+app.get('/', async (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
+  // test databse connextion
 });
 
+// DOWNLOAD ZIP FILE
 app.get('/download', (req, res) => {
   const fileURL = req.query.url.replace("https", "http");
   const filename = fileURL.split('/').pop();
@@ -71,9 +78,45 @@ app.get('/download', (req, res) => {
   });
 });
 
+// PLAY SCORM
 app.get('/scorm', (req, res) => {
   res.sendFile(__dirname + '/public/scorm.html');
 });
+
+
+// UPDAT OR CREATE POST HISTORY
+app.post('/save-history', async (req, res) => {
+  let bodyString = JSON.stringify(req.body);
+  console.log("bodyString", bodyString)
+  const payload = {
+    user_id:1, 
+    scorm_id:1, 
+    history: bodyString, 
+    status: req?.body?.core?.lesson_status
+  }
+  try {
+    const history = await ScormHistory.create(payload);
+    res.json(history);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// GET HISTORY
+// app.get('/history/:scorm_id/:user_id', async (req, res) => {
+//   try {
+//     const todo = await ScormHistory.findByPk(req.params.id);
+//     if (todo) {
+//       await todo.destroy();
+//       res.send('Todo deleted');
+//     } else {
+//       res.status(404).send('Todo not found');
+//     }
+//   } catch (err) {
+//     res.status(500).send(err.message);
+//   }
+// });
+
 
 server.listen(port, () => {
   console.log(`Server is listening on port ${port}`);

@@ -13,15 +13,18 @@
   <script type="text/javascript" src="scripts/scormAPI.js"></script>
   <script type="text/javascript" src="scripts/scormAPI2004.js"></script>
   <script>
-    function getXmlManifest (manifestUrl){
+    let scormVersion = "1.2"
+    let prevProcess = null; // used to make sure only 1 hit request to server on a time
+
+    const getXmlManifest = (manifestUrl) => {
       return fetch(manifestUrl)
         .then((response) => response.text())
         .then((str) => new window.DOMParser().parseFromString(str, "text/xml"))
         .then((data) => data)
         .catch(console.error)
     }
-    
-    function getBaseUrl () {
+
+    const getBaseUrl = () => {
       const protocol = window.location.protocol;
       const port = window.location.port;
       let baseUrl = protocol + "//" + window.location.hostname;
@@ -31,9 +34,81 @@
       return baseUrl
     }
 
+    const postHistoryToServer = async (data) => {
+      console.log("post scorm histoyr", data)
+      var success = false;
+      var maxRequest = 2;
+      var counter = 0
+      while (!success && counter < maxRequest) {
+        //console.log("counter", counter)
+        //console.log("newToken", newToken)
+        await fetch('/save-history/', {
+          'method': 'POST',
+          'headers': {
+            'Content-Type': 'application/json',
+            // 'Authorization': `Bearer ${newToken || token}`
+          },
+          body: JSON.stringify(data)
+        })
+          .then(async resp => {
+            // if (resp.status === 401)
+            //   await getRefreshToken();
+
+            if (resp.status === 200)
+              success = true;
+
+            counter = counter + 1;
+            hideWarning();
+          })
+          .catch(async err => {
+            console.log(err)
+            await getRefreshToken();
+            console.log(err);
+            showWarning();
+            counter = counter + 1;
+          })
+      }
+    }
+
+    const populateDataHistory = (info) => {
+      var value = {}
+      var currentLocation = []
+      var lessonStatus = "incompleted"
+      if (scormVersion === "2004") {
+        value = window.API_1484_11.cmi.toJSON();
+        currentLocation = normalizeLessonLocation(value.location);
+        value["location"] = currentLocation;
+        lessonStatus = value.completion_status
+        console.log("CMI TO JSON 2004", value)
+      } else {
+        value = window.API.cmi.toJSON();
+        console.log("CMI TO JSON 1.2", value)
+        currentLocation = normalizeLessonLocation(value.core.lesson_location);
+        lessonStatus = value.core.lesson_status
+        value["core.lesson_location"] = currentLocation;
+      }
+
+      if (prevProcess) {
+        clearTimeout(prevProcess);
+      }
+
+      prevProcess = setTimeout(() => {
+        postHistoryToServer(value);
+      }, 1000)
+
+    }
+
+    const normalizeLessonLocation = (location) => {
+        try {
+          result = location.replace(/NaN/g, 0);
+          return result;
+        } catch {
+          return location;
+        }
+      }
+
     window.loadScorm = async function loadScorm() {
-      console.log("=== SCROM PLAYER VERSION: 2023/03/08 ===")
-      console.log("=== REFRESH TOKEN VERSION ===")
+      console.log("VERSION: 230320")
       const mainFrame = document.getElementById("scorm-player")
       // RUN IN SIMPLE MANIFEST
       // mainFrame.name === 'scorm'
@@ -46,7 +121,6 @@
       const xmlDoc = await getXmlManifest(manifestUrl);
       const doc = window.simplifyScorm.xmlToJson(xmlDoc);
       const version = doc.manifest.metadata.schemaversion["#text"]
-      let scormVersion="1.2"
       if (version === "CAM 1.3" || version === "SCORM 2004 3rd Edition" || version === "2004 3rd Edition") {
         scormVersion = "2004"
       }
@@ -54,39 +128,31 @@
 
       // FUTURE : will add function to use last history here
       // FUTURE : also will load history based on right version of scorm
-
       console.log(scormVersion, resources)
       let href = manifestUrl.replace('imsmanifest.xml', resources.href)
       mainFrame.name = "scorm"
       mainFrame.src = href
-    
-      
-      // ====== scorm 2004 =====
+
+      // ====== scorm 1.2 =====
       window.API.on("LMSSetValue", function (elm, value) {
-        console.log("1")
-        // sendScormHistory("SET VALUE SCORM 1.2")
+        populateDataHistory("SET VALUE SCORM 1.2")
       });
       window.API.on("LMSCommit", function (elm, value) {
-        console.log("2")
-        // sendScormHistory("COMMIT SCORM 1.2")
+        populateDataHistory("COMMIT SCORM 1.2")
       });
       window.API.on("LMSFinish", function (elm, value) {
-        console.log("3")
-        // sendScormHistory("TERMINATE SCORM 1.2")
+        populateDataHistory("TERMINATE SCORM 1.2")
       });
 
       // ====== scorm 2004 =====
       window.API_1484_11.on("SetValue", function (elm, value) {
-        console.log("1")
-        // sendScormHistory("SET VALUE SCORM 2004")
+        populateDataHistory("SET VALUE SCORM 2004")
       });
       window.API_1484_11.on("Commit", function (elm, value) {
-        console.log("2")
-        // sendScormHistory("COMMIT SCORM 2004")
+        populateDataHistory("COMMIT SCORM 2004")
       });
       window.API_1484_11.on("Terminate", function (elm, value) {
-        console.log("3")
-        // sendScormHistory("TERMINATE SCORM 2004")
+        populateDataHistory("TERMINATE SCORM 2004")
       });
 
     }
