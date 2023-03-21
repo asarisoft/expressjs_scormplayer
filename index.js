@@ -95,27 +95,48 @@ app.post('/save-history', async (req, res) => {
     status: req?.body?.core?.lesson_status
   }
   try {
-    const history = await ScormHistory.create(payload);
-    res.json(history);
+    console.log("aku ok")
+    ScormHistory.findOne({ where: { user_id: "1", scorm_id: "1"  } })
+    .then(async (history) => {
+      if (!history) {
+        console.log("masuk siniii")
+        // res.status(404).json({ error: 'User not found' });
+        const newhistory = await ScormHistory.create(payload);
+        res.json(newhistory);
+      } else {
+        console.log("masuk siniii2")
+        history.update(payload)
+          .then(() => res.json({ message: 'User updated successfully.' }))
+          .catch(error => res.json({ error: error.message }));
+      }
+    })
+    .catch(error => res.json({ error: error.message }));
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
 
 // GET HISTORY
-// app.get('/history/:scorm_id/:user_id', async (req, res) => {
-//   try {
-//     const todo = await ScormHistory.findByPk(req.params.id);
-//     if (todo) {
-//       await todo.destroy();
-//       res.send('Todo deleted');
-//     } else {
-//       res.status(404).send('Todo not found');
-//     }
-//   } catch (err) {
-//     res.status(500).send(err.message);
-//   }
-// });
+app.get('/history/:scormID/:userID', async (req, res) => {
+  const scormId = req.params.scormID
+  const userID = req.params.userID  
+  try {
+    const history = await ScormHistory.findAll({
+      where: {
+        scorm_id: scormId,
+        user_id: userID,
+      }
+    });
+    if (history) {
+      console.log("nhiostssss", history)
+      res.json(history);
+    } else {
+      res.status(404).send('Todo not found');
+    }
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
 
 
 server.listen(port, () => {

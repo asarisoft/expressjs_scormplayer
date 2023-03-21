@@ -1,7 +1,7 @@
 const { Sequelize } = require('sequelize');
 
 // Connect to the PostgreSQL database using Sequelize
-const sequelize = new Sequelize('postgres://imam:asari1@localhost:5432/scorm_player');
+const sequelize = new Sequelize('postgres://imam:asari1@localhost:5432/scorm_player1');
 
 // Define the Todo model
 const ScormHistory = sequelize.define('ScormHistory', {
@@ -10,7 +10,7 @@ const ScormHistory = sequelize.define('ScormHistory', {
     allowNull: false
   },
   scorm_id: {
-    type: Sequelize.TEXT,
+    type: Sequelize.STRING,
     allowNull: true
   },
   history: {

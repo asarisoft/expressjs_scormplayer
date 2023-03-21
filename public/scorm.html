@@ -34,6 +34,18 @@
       return baseUrl
     }
 
+    const getHistoryFromServer = () => {
+      console.log("Get History Data From Server")
+      return fetch('/history/1/1', {
+        'method': 'GET',
+      })
+        .then(response => response.json())
+        .then(data => { return data[0] })
+        .catch(async err => {
+          console.log("error get history", err)
+        })
+    }
+
     const postHistoryToServer = async (data) => {
       console.log("post scorm histoyr", data)
       var success = false;
@@ -58,7 +70,6 @@
               success = true;
 
             counter = counter + 1;
-            hideWarning();
           })
           .catch(async err => {
             console.log(err)
@@ -70,7 +81,7 @@
       }
     }
 
-    const populateDataHistory = (info) => {
+    const populateDataHistoryToPost = (info) => {
       var value = {}
       var currentLocation = []
       var lessonStatus = "incompleted"
@@ -99,13 +110,13 @@
     }
 
     const normalizeLessonLocation = (location) => {
-        try {
-          result = location.replace(/NaN/g, 0);
-          return result;
-        } catch {
-          return location;
-        }
+      try {
+        result = location.replace(/NaN/g, 0);
+        return result;
+      } catch {
+        return location;
       }
+    }
 
     window.loadScorm = async function loadScorm() {
       console.log("VERSION: 230320")
@@ -128,31 +139,64 @@
 
       // FUTURE : will add function to use last history here
       // FUTURE : also will load history based on right version of scorm
-      console.log(scormVersion, resources)
+      const history = await getHistoryFromServer()
+      if (history?.history) {
+        console.log("INITIAL COURSE DATA", history)
+        const rawData = JSON.parse(history.history);
+        console.log("radwww", rawData)
+        if (scormVersion === "1.2") {
+          if (rawData !== undefined && rawData !== null) {
+            if (rawData['core.lesson_lation']) {
+              rawData['core.lesson_location'] = rawData['core.lesson_lation']
+              delete rawData['core.lesson_lation'];
+            }
+          }
+          window.API.loadFromJSON(rawData);
+        } else {
+          var parseTo2004 = {}
+          if (rawData !== undefined && rawData !== null) {
+            parseTo2004 = {
+              "completion_status": rawData["core.lesson_status"],
+              "credit": rawData["core.credit"],
+              "learner_id": rawData["core.student_id"],
+              "learner_name": rawData["core.student_name"],
+              "location": rawData["core.lesson_location"],
+              "mode": rawData["core.lesson_mode"],
+              "session_time": rawData["core.session_time"]
+            }
+          }
+          window.API_1484_11.loadFromJSON(rawData || parseTo2004);
+        }
+      } 
+
       let href = manifestUrl.replace('imsmanifest.xml', resources.href)
-      mainFrame.name = "scorm"
-      mainFrame.src = href
+      if (href) {
+        mainFrame.name = "scorm"
+        mainFrame.src = href
+      } else {
+        mainFrame.src = "about:blank"
+      }
 
       // ====== scorm 1.2 =====
       window.API.on("LMSSetValue", function (elm, value) {
-        populateDataHistory("SET VALUE SCORM 1.2")
+        populateDataHistoryToPost("SET VALUE SCORM 1.2")
       });
       window.API.on("LMSCommit", function (elm, value) {
-        populateDataHistory("COMMIT SCORM 1.2")
+        populateDataHistoryToPost("COMMIT SCORM 1.2")
       });
       window.API.on("LMSFinish", function (elm, value) {
-        populateDataHistory("TERMINATE SCORM 1.2")
+        populateDataHistoryToPost("TERMINATE SCORM 1.2")
       });
 
       // ====== scorm 2004 =====
       window.API_1484_11.on("SetValue", function (elm, value) {
-        populateDataHistory("SET VALUE SCORM 2004")
+        populateDataHistoryToPost("SET VALUE SCORM 2004")
       });
       window.API_1484_11.on("Commit", function (elm, value) {
-        populateDataHistory("COMMIT SCORM 2004")
+        populateDataHistoryToPost("COMMIT SCORM 2004")
       });
       window.API_1484_11.on("Terminate", function (elm, value) {
-        populateDataHistory("TERMINATE SCORM 2004")
+        populateDataHistoryToPost("TERMINATE SCORM 2004")
       });
 
     }
