@@ -119,7 +119,7 @@ app.post('/save-history/:userID/:scormID/', async (req, res) => {
     status: req?.body?.core?.lesson_status
   }
   try {
-    ScormHistory.findOne({ where: { user_id: "1", scorm_id: "1"  } })
+    ScormHistory.findOne({ where: { user_id: userID, scorm_id: scormID  } })
     .then(async (history) => {
       if (!history) {
         console.log("masuk siniii")
@@ -148,16 +148,18 @@ app.get('/history/:userID/:scormID', async (req, res) => {
       where: {
         scorm_id: scormID,
         user_id: userID,
-      }
+      },
+      limit: 1,
+      order: [['id', 'DESC']]
     });
     if (history) {
-      console.log("nhiostssss", history)
       res.json(history);
     } else {
-      res.status(404).send('Todo not found');
+      res.status(404).json({"error": "History not found"});
     }
   } catch (err) {
-    res.status(500).send(err.message);
+    // res.status(500).send(err.message);
+    res.status(500).json({"error": err.message});
   }
 });
 
@@ -165,4 +167,7 @@ server.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });
 
-// TODO save history harus update, kalau ada leibh satu pas get harus ambil yang terakhir
+// TODO 
+// save status completed atau belajar dari BE, gimana cara save nya untuk yang 1,2 dan 2004
+// kalau sudah completed jangan update lagi history
+
