@@ -9,6 +9,7 @@
     body {
       font-family: 'Open Sans', sans-serif;
     }
+
     #container {
       padding: 10%;
       display: flex;
@@ -17,10 +18,12 @@
       flex: 1;
       flex-direction: column;
     }
+
     .title {
-      text-align: center; 
+      text-align: center;
       font-weight: bold;
     }
+
     #progressBar {
       width: 100%;
       height: 5px;
@@ -29,31 +32,54 @@
       z-index: 9999;
       background-color: #a7ada7;
     }
+
     #progress {
       width: 0%;
       height: 100%;
       background-color: #4CAF50;
       transition: width 0.1s ease-in-out;
     }
+    #errorMessage {
+      color: rgb(198, 61, 61);
+      text-align: center;
+    }
+    #errorWrapper {
+      display: flex;
+      justify-content: center;
+      flex: 1;
+      align-items: center;
+      flex-direction: column;
+    }
   </style>
 </head>
 
 <body>
   <div id="container">
-    <h3 class="title">Please wait while we download and load your awesome content.</h3>
-    <div id="progressBar">
-      <div id="progress"></div>
+    <div class="loading" id="loading">
+      <h3 class="title">Please wait while we download and load your awesome content.</h3>
+      <div id="progressBar">
+        <div id="progress"></div>
+      </div>
+      <p style="text-align: center; margin-top: 10rem;">Player Version: 0.0.1</p>
     </div>
-    <p style="text-align: center;">Player Version: 0.0.1</p>
+    <div id="errorWrapper">
+      <img src="./image/warning.png" style="width: 150px">
+      <h4 id="errorMessage"></h3>
+    </div>
+   
   </div>
   <script>
     var httpRequest = new XMLHttpRequest();
     var progressBar = document.getElementById('progress');
+    var errorMessage = document.getElementById('errorMessage');
+    var loading = document.getElementById('loading');
 
     // get url Param
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
-    const url = urlParams.get('url');
+    // const url = urlParams.get('url');
+    const user_id = urlParams.get('user_id');
+    const scorm_id = urlParams.get('scorm_id');
 
     // gate bas url
     const protocol = window.location.protocol;
@@ -63,28 +89,40 @@
       baseUrl += ":" + port;
     }
 
-
     var timeOut = setTimeout(function () {
       httpRequest.abort();
       alert('Request timeout');
-    }, 10000000000000); // Timeout set to 10 seconds
+    }, 10000000000000); 
 
     httpRequest.onreadystatechange = function () {
       if (httpRequest.readyState === 4) {
-        clearTimeout(timeOut);
+        console.log("httpRequesthttpRequest", httpRequest)
+        const jsonResponse = JSON.parse(httpRequest.responseText)
         if (httpRequest.status === 200) {
-          console.log(httpRequest.responseText)
-          window.location.href = `${baseUrl}/scorm?manifestUrl=${httpRequest.responseText}`;
-        } else {
-          alert('Request failed: ' + httpRequest.status);
+          console.log(httpRequest)
+          window.location.href = `${baseUrl}/scorm?manifestUrl=${jsonResponse.manifest}&user_id=${jsonResponse.userID}&scorm_id=${jsonResponse.scormID}`;
+        } else if (httpRequest.status === 404) {
+          errorMessage.innerHTML = `We are unable to process your request at this time. <br /><br />${jsonResponse.error}`;
+          loading.style.display = "none";
+        } else if (httpRequest.status === 400) {
+          errorMessage.innerHTML = `We are unable to process your request at this time. <br /><br />${jsonResponse.error}`;
+          loading.style.display = "none";
         }
       } else {
         var progress = (httpRequest.readyState / 4) * 100;
         progressBar.style.width = progress + '%';
       }
     };
-    httpRequest.open('GET', `${baseUrl}/download?url=${url}`);
-    httpRequest.send();
+    
+    //hit download API on first loading
+    if (user_id && scorm_id) {
+      httpRequest.open('GET', `${baseUrl}/download?user_id=${user_id}&scorm_id=${scorm_id}`);
+      httpRequest.send();
+    } else {
+      errorMessage.innerHTML = "We are unable to process your request at this time. <br /><br /> Please ensure that both the userID and scormID have been entered correctly and try again.";
+      loading.style.display = "none";
+    }
+      
   </script>
 </body>
 

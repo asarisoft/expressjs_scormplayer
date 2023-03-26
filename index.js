@@ -16,24 +16,44 @@ app.use(bodyParser.json());
 
 app.get('/', async (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
-  // test databse connextion
 });
 
 // DOWNLOAD ZIP FILE
-app.get('/download', (req, res) => {
-  const fileURL = req.query.url.replace("https", "http");
+app.get('/download', async (req, res) => {
+  const userID = req.query.user_id
+  const scormID = req.query.scorm_id
+  // always get data from server
+  let contentObject = await new Promise((resolve, reject) => {
+    http.get(`http://test.blindpen.my.id/api/scorm/${scormID}`, (res) => {    
+      res.on('data', (data) => {
+        resolve(data.toString());
+      });
+    }).on('error', (error) => {
+      console.log("errorrrrrr", error)
+      reject(error);
+    });
+  });
+  
+  try {
+    contentObject =  JSON.parse(contentObject);
+    if (!contentObject?.url) {
+      return res.status(404).json({ error: 'Content not found' });
+    }
+  } catch (error) {
+    return res.status(404).json({ error: 'Error while downloading the content' });
+  }
+
+  const fileURL = contentObject?.url?.replace("https", "http");
   const filename = fileURL.split('/').pop();
   const filepath = `${__dirname}/scormzip/${filename}`;
-
+  // downlaod file
   const request = http.get(fileURL, (response) => {
     const fileStream = fs.createWriteStream(filepath);
     response.pipe(fileStream);
     fileStream.on('finish', () => {
       fileStream.close();
-
       const zip = new AdmZip(filepath);
       const zipEntries = zip.getEntries();
-
       // Loop through all entries in the zip file and extract them
       if (!fs.existsSync(`${__dirname}/public/scormextract/${filename}`)) {
          // Extract the file from the ZIP archive
@@ -67,11 +87,14 @@ app.get('/download', (req, res) => {
       // Delete the original ZIP file
       fs.unlinkSync(filepath);
 
-      res.send(`scormextract/${filename}/imsmanifest.xml`);
+      res.json({
+        "userID": userID,
+        "scormID": scormID,
+        "manifest": `scormextract/${filename}/imsmanifest.xml`
+      });
       // res.redirect('/scorm');
     });
   });
-
   request.on('error', (err) => {
     console.error(err);
     res.send('Download failed.');
@@ -83,19 +106,19 @@ app.get('/scorm', (req, res) => {
   res.sendFile(__dirname + '/public/scorm.html');
 });
 
-
 // UPDAT OR CREATE POST HISTORY
-app.post('/save-history', async (req, res) => {
+app.post('/save-history/:userID/:scormID/', async (req, res) => {
   let bodyString = JSON.stringify(req.body);
-  console.log("bodyString", bodyString)
+  const userID = req.params.userID
+  const scormID = req.params.scormID  
+
   const payload = {
-    user_id:1, 
-    scorm_id:1, 
+    user_id:userID, 
+    scorm_id:scormID, 
     history: bodyString, 
     status: req?.body?.core?.lesson_status
   }
   try {
-    console.log("aku ok")
     ScormHistory.findOne({ where: { user_id: "1", scorm_id: "1"  } })
     .then(async (history) => {
       if (!history) {
@@ -117,13 +140,13 @@ app.post('/save-history', async (req, res) => {
 });
 
 // GET HISTORY
-app.get('/history/:scormID/:userID', async (req, res) => {
-  const scormId = req.params.scormID
+app.get('/history/:userID/:scormID', async (req, res) => {
+  const scormID = req.params.scormID
   const userID = req.params.userID  
   try {
     const history = await ScormHistory.findAll({
       where: {
-        scorm_id: scormId,
+        scorm_id: scormID,
         user_id: userID,
       }
     });
@@ -138,7 +161,8 @@ app.get('/history/:scormID/:userID', async (req, res) => {
   }
 });
 
-
 server.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });
+
+// TODO save history harus update, kalau ada leibh satu pas get harus ambil yang terakhir

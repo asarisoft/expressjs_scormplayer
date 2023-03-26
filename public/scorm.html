@@ -15,6 +15,10 @@
   <script>
     let scormVersion = "1.2"
     let prevProcess = null; // used to make sure only 1 hit request to server on a time
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const userID = urlParams.get('user_id')
+    const scormID = urlParams.get('scorm_id')
 
     const getXmlManifest = (manifestUrl) => {
       return fetch(manifestUrl)
@@ -36,7 +40,7 @@
 
     const getHistoryFromServer = () => {
       console.log("Get History Data From Server")
-      return fetch('/history/1/1', {
+      return fetch(`/history/${userID}/${scormID}`, {
         'method': 'GET',
       })
         .then(response => response.json())
@@ -54,7 +58,7 @@
       while (!success && counter < maxRequest) {
         //console.log("counter", counter)
         //console.log("newToken", newToken)
-        await fetch('/save-history/', {
+        await fetch(`/save-history/${userID}/${scormID}`, {
           'method': 'POST',
           'headers': {
             'Content-Type': 'application/json',
@@ -126,8 +130,6 @@
       // mainFrame.src = "/scormextract/scorm.zip/modul/index.html"
 
       // RUN WITH READ MANIFEST
-      const queryString = window.location.search;
-      const urlParams = new URLSearchParams(queryString);
       let manifestUrl = `${getBaseUrl()}/${urlParams.get('manifestUrl')}`
       const xmlDoc = await getXmlManifest(manifestUrl);
       const doc = window.simplifyScorm.xmlToJson(xmlDoc);

@@ -24,6 +24,21 @@ const ScormHistory = sequelize.define('ScormHistory', {
   }
 });
 
+const ScormContent = sequelize.define('ScormContent', {
+  scorm_id: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  title: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  url: {
+    type: Sequelize.STRING,
+    allowNull: true
+  },
+});
+
 // Sync the model with the database
 sequelize.sync()
   .then(() => {
@@ -33,4 +48,4 @@ sequelize.sync()
     console.error('Error syncing database', err);
   });
 
-module.exports = { sequelize, ScormHistory };
+module.exports = { sequelize, ScormHistory, ScormContent };
