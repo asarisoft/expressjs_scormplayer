@@ -29,7 +29,7 @@ app.get('/download', async (req, res) => {
         resolve(data.toString());
       });
     }).on('error', (error) => {
-      console.log("errorrrrrr", error)
+      console.log("GET content object error", error)
       reject(error);
     });
   });
@@ -79,7 +79,7 @@ app.get('/download', async (req, res) => {
           try {
             fs.writeFileSync(entryPath, data);
           } catch (error) {
-            console.log("error", error)
+            console.log("Extract ZIP ERROR", error)
           }
         }
       });
@@ -116,21 +116,22 @@ app.post('/save-history/:userID/:scormID/', async (req, res) => {
     user_id:userID, 
     scorm_id:scormID, 
     history: bodyString, 
-    status: req?.body?.core?.lesson_status
+    completed: req?.body?.core?.lesson_status === "completed"
   }
   try {
     ScormHistory.findOne({ where: { user_id: userID, scorm_id: scormID  } })
     .then(async (history) => {
       if (!history) {
-        console.log("masuk siniii")
         // res.status(404).json({ error: 'User not found' });
         const newhistory = await ScormHistory.create(payload);
         res.json(newhistory);
       } else {
-        console.log("masuk siniii2")
-        history.update(payload)
-          .then(() => res.json({ message: 'User updated successfully.' }))
-          .catch(error => res.json({ error: error.message }));
+        if (!history.completed)
+          history.update(payload)
+            .then(() => res.json({ message: 'User updated successfully.' }))
+            .catch(error => res.json({ error: error.message }));
+        else  
+          console.log("NOT REUPDATED Becuase SCORM IS COMPLETED")
       }
     })
     .catch(error => res.json({ error: error.message }));
